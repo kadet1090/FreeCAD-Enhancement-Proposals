@@ -61,7 +61,9 @@ for Python. Therefore, enhancement proposals are a better fit for FreeCAD than R
 
 Each FEP is numbered using four digits and new FEPs should get the next free FEP number. FEP numbers
 are unique and persistent - once a FEP number is obtained, it is reserved for that and only that FEP
-and cannot be reused later. All FEPs are stored in the [FEP Repository] as files within the `FEPs` folder.
+and cannot be reused later. All FEPs are stored in the
+[FEP Repository](https://github.com/FreeCAD/FreeCAD-Enhancement-Proposals)
+as files within the `FEPs` folder.
 
 ### Who can create a FEP?
 
@@ -80,15 +82,15 @@ explicitly on PRs by the community. Each major change should be considered a goo
 
 Examples on when FEPs **should be** created:
 
-- creating new core Workbench,
+- creating a new core Workbench,
 - making a large change to an existing workbench (such as renaming Path to CAM, or merging Part and
   Part Design), or
 - creating a new core subsystem (such as a migration system).
 
 Examples on when FEPS **are not needed**:
 
-- minor features (addition of another property to existing feature) or
-- fixing bugs, especially if there is open issue
+- minor features (addition of another property to an existing feature) or
+- fixing bugs, especially if there is open issue.
 
 In rare occasions an author of a PR may be asked to create one if the change requires broader
 discussion.
@@ -103,7 +105,7 @@ discussion.
 - **Informational**: FEPs can be used to provide general guidelines for development, for a roadmap,
   goals, etc.
 
-### What should FEP contain?
+### What should a FEP contain?
 
 A good FEP should contain:
 
@@ -152,7 +154,7 @@ changes to the proposal. However, they should be versioned (using 0.x version) a
 When the author deems that the proposal is finalized and ready for discussion, it should be moved
 to **Proposed** state and the version should be changed to 1.0. A discussion should be created in
 the "FEP Discussion" section of the Discussion forum where the topic should have the same name as
-FEP and PR. The author may chose to create a new topic or ask Maintainers to simply move the topic
+FEP and PR. The author may choose to create a new topic or ask Maintainers to simply move the topic
 from the "FEP Ideas" section. Once this has been accomplished, the PR containing the FEP should be
 merged into the repository assuming there are no formal problems with the PR.
 
@@ -179,14 +181,14 @@ Based on the discussion the maintainers make decision on the FEP:
 
 #### Post-Decision Phase
 
-If FEP is accepted by the maintainers it moves into **Accepted** stage awaiting for completion of
-implementation, for **Process** and **Informational** FEP types this is the final stage.
+If the FEP is accepted by the maintainers, it moves into **Accepted** stage awaiting for completion
+of implementation, for **Process** and **Informational** FEP types this may be the final stage.
 
 Once the implementation is merged into the FreeCAD repository, the FEP moves into the
 **Implemented** state which is the final state for **Core Change** FEPs. Technically, the FEP may
-be moved from **Accepted** stage into **Rejected** (or **Draft**) if the implementation process is
-not finished within a reasonable time frame or the implementation process shows flaws that were not
-known at discussion stage. Ensuring that the Proposal is implemented, is the sole responsibility
+be moved from the **Accepted** stage into **Rejected** (or **Draft**) if the implementation process
+is not finished within a reasonable time frame or the implementation process shows flaws that were
+not known at discussion stage. Ensuring that the Proposal is implemented, is the sole responsibility
 of the FEP author(s).
 
 If the FEP is rejected, it is moved into the **Rejected** stage. All rejected FEPs are kept for
