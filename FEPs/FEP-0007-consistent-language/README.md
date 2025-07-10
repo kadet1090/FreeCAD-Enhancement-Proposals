@@ -22,8 +22,8 @@ that developers should follow when naming or labeling functions, features, and a
 
 ## Motivation
 
-FreeCAD has a lot of different user facing texts: menu entries, toolbar items, tooltips, tool hints,
-tooltip - to name a few. Historically these texts were added by many developers, often non-native
+FreeCAD has a lot of different user facing texts: menu entries, toolbar items, tooltips, and tool
+hints - to name a few. Historically these texts were added by many developers, often non-native
 english speakers which creates inconsistencies in terms of writing style used.
 
 Certain workbenches use Title Case for menu items, other use Sentence case. Some field labels have
