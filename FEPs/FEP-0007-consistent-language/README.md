@@ -145,7 +145,7 @@ workflows.` - Complete sentences end with a period.
 - Hint: `Toggles the visibility of the active sketch` - No period at the end
 - Command: `New File` - This is just a short label. A tooltip for that command button would be
   "Creates a new file".
-- Command: `Save As…` - The function requires user input to function.
+- Command: `Save As…` - Save under what name?
 - Command: `Addon Manager` - This is not a simple action, so no ellipsis.
 
 The technical details of the proposed change.
