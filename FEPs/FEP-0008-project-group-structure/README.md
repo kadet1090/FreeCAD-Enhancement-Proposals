@@ -107,6 +107,8 @@ toward a defined set of goals. Working Groups are typically permanent and cover 
 interest, such as UI/UX, infrastructure, code quality, or CAD industry practices. Groups may focus
 on development, infrastructure, policies, or other project-related topics.
 
+The purpose of Working Groups is to provide a more organized venue for discussion and to ensure that such discussions yield useful outcomes. Each Working Group must conduct a genuine, documented discussion process. Working Groups must not be used solely to confer legitimacy on a predetermined decision.
+
 Working Groups have no special decision-making authority unless explicitly delegated by the Maintainers; even in such cases, responsibility rests with the Maintainer(s) who grant and oversee that authority. Their primary function is to act as an advisory body. Working Groups shall not be held responsible for any decisions.
 
 ### Structure of a Working Group
