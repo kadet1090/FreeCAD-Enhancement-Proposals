@@ -107,8 +107,7 @@ toward a defined set of goals. Working Groups are typically permanent and cover 
 interest, such as UI/UX, infrastructure, code quality, or CAD industry practices. Groups may focus
 on development, infrastructure, policies, or other project-related topics.
 
-Working Groups do not hold any special decision-making powers unless explicitly delegated by the
-Maintainers. Their primary function is to act as advisory bodies.
+Working Groups have no special decision-making authority unless explicitly delegated by the Maintainers; even in such cases, responsibility rests with the Maintainer(s) who grant and oversee that authority. Their primary function is to act as an advisory body. Working Groups shall not be held responsible for any decisions.
 
 ### Structure of a Working Group
 
