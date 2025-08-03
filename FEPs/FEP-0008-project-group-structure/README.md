@@ -152,7 +152,7 @@ will summarize the prevailing opinion using the “rough consensus” rule [[1]]
 
 Any official group statement must be posted on GitHub (as a comment on a PR/issue, a new issue, or
 an FEP). Statements must clearly represent the group's position, not an individual opinion, and
-should include a summary of the discussion and a link to the full public conversation.
+should include a summary of the discussion and a link to the full public conversation. Group statements that are not posted on GitHub shall not be cited as justification for any decision. Decisions must not be made concurrently with the publication of an official group statement. There must be a reasonable interval between an official group statement and any related decision, during which community members who are not part of the group can participate in the discussion.
 
 ### Creating a New Working Group
 
