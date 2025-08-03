@@ -154,6 +154,8 @@ Any official group statement must be posted on GitHub (as a comment on a PR/issu
 an FEP). Statements must clearly represent the group's position, not an individual opinion, and
 should include a summary of the discussion and a link to the full public conversation. Group statements that are not posted on GitHub shall not be cited as justification for any decision. Decisions must not be made concurrently with the publication of an official group statement. There must be a reasonable interval between an official group statement and any related decision, during which community members who are not part of the group can participate in the discussion.
 
+Only the Chairperson or a Co-Chair may speak on behalf of the Group. If a member makes a statement purporting to represent the Group, confirmation may be requested from the Chairperson or the Co-Chairs. Unless it is expressly stated that the speaker is acting on behalf of the Group, all statements are deemed to be made in a personal capacity.
+
 ### Creating a New Working Group
 
 Because Working Groups are permanent, their creation requires extended discussion. A new Working
