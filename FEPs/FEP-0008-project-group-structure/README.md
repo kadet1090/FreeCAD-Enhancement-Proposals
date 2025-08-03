@@ -93,6 +93,13 @@ New Maintainers are appointed by the current Maintainers through full consensus.
 selected from active contributors who have been engaged with the community for a significant time,
 review PRs and issues, participate in project meetings, and adhere to the Code of Conduct.
 
+### Authority and Accountability
+
+Maintainers hold the **sole authority** to make decisions on behalf of the Project. With this authority comes responsibility. Responsibility for any decision rests both **with the individual Maintainer** who makes or implements that decision and, **collectively, with all Maintainers**. In line with this responsibility, Maintainers may be **requested or required**, as appropriate, to:
+- reconsider or withdraw a decision;
+- take corrective actions to remedy outcomes arising from a decision; and/or
+- tender their resignation.
+
 ## Working Groups
 
 A **Working Group** is a team of community members (not necessarily developers) who work together
