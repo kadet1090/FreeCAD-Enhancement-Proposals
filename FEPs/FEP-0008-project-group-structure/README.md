@@ -111,6 +111,8 @@ The purpose of Working Groups is to provide a more organized venue for discussio
 
 Working Groups have no special decision-making authority unless explicitly delegated by the Maintainers; even in such cases, responsibility rests with the Maintainer(s) who grant and oversee that authority. Their primary function is to act as an advisory body. Working Groups shall not be held responsible for any decisions.
 
+Working Group statements do not carry any special status over other community views. Maintainers should treat them as such when making decisions. If Maintainers cite a Working Group’s position as a rationale for a decision, the legitimacy of that decision derives from the quality and breadth of the group’s discussion—not from the mere existence of a Working Group statement.
+
 ### Structure of a Working Group
 
 Each Working Group must have a designated **Chairperson** responsible for managing the group,
