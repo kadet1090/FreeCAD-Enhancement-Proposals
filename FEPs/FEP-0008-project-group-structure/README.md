@@ -126,7 +126,7 @@ appoint a replacement.
 #### Membership and Internal Structure
 
 The Chair determines the rules for membership, which must be non-discriminatory and allow anyone to
-request to join. Specific expertise may be required to become a member. Community members may belong
+request to join. These rules must be accessible to everyone and the desired communication link for the application must be clearly stated. Specific expertise may be required to become a member. Community members may belong
 to multiple Working Groups.
 
 New members of the working group are appointed by the Chair. Community member may request membership by
