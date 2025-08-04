@@ -95,10 +95,7 @@ review PRs and issues, participate in project meetings, and adhere to the Code o
 
 ### Authority and Accountability
 
-Maintainers hold the **sole authority** to make decisions on behalf of the Project. With this authority comes responsibility. Responsibility for any decision rests both **with the individual Maintainer** who makes or implements that decision and, **collectively, with all Maintainers**. In line with this responsibility, Maintainers may be **requested or required**, as appropriate, to:
-- reconsider or withdraw a decision;
-- take corrective actions to remedy outcomes arising from a decision; and/or
-- tender their resignation.
+Maintainers hold the **sole authority** to make decisions on behalf of the Project. Maintainers operate on a consensus basis whenever possible, and a rough consensus basis when full consensus cannot be achieved. All decisions from a Maintainer should be interpreted as a decision on behalf of the whole body of Maintainers. However, mistakes can happen, and decisions may need to be revisited. If a member of the FreeCAD community feels that a mistake has been made (for example, a PR merged when it shouldn't have been, or closed when it should have been merged), they should reach out to a member of the Maintainers team to request reconsideration. Maintainers have the responsibility to take these requests into consideration a part of their larger responsibility to the health of the project as a whole.
 
 ## Working Groups
 
