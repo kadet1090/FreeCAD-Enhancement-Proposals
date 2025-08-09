@@ -192,7 +192,28 @@ Lowercase only minor words that are three letters or fewer:
 - articles (a, an, the)
 - short prepositions (e.g., as, at, by, for, in, of, off, on, per, to, up, via)
 
-More information on APA guidelines for [Title Case](https://apastyle.apa.org/style-grammar-guidelines/capitalization/title-case) and [Sentence case](https://apastyle.apa.org/style-grammar-guidelines/capitalization/sentence-case).
+More information on APA guidelines for [Title
+Case](https://apastyle.apa.org/style-grammar-guidelines/capitalization/title-case) and [Sentence
+case](https://apastyle.apa.org/style-grammar-guidelines/capitalization/sentence-case).
+
+### Writing units
+
+Write a space between numerical value and unit symbol. The only exception are unit symbols for angle.
+When in doubt see NIST guide to the SI. [[6]](#nist-guide-si)
+
+If an input field requires numerical value and a unit then unit symbol should be placed inside
+that input field. Not in the label or hint.
+
+### Examples
+
+- Tooltip: `Constrains new geometry automatically. It is recommended to leave it enabled for most
+workflows.` - Complete sentences end with a period.
+- Hint: `Toggles the visibility of the active sketch` - No period at the end
+- Command: `New File` - This is just a short label. A tooltip for that command button would be
+  "Creates a new file".
+- Command: `Save As…` - Save under what name?
+- Command: `Addon Manager` - This is not a simple action, so no ellipsis.
+- Units: `20 ms`, `30 %`, `100 px`, `12 pt`, `45°` - Space in between, except for degree of angle.
 
 
 ### 6. Examples
@@ -225,6 +246,7 @@ No change to functionality. Translators will need to update strings after these 
 3. <span name=apple-style-guide>Apple Human Interface Guidelines - Menus</span>: https://developer.apple.com/design/human-interface-guidelines/menus
 4. <span name=kde-style-guide>KDE Human Interface Guidelines - Text and labels</span>: https://develop.kde.org/hig/text_and_labels/
 5. <span name=microsoft-style-guide>Microsoft Writing Style Guide</span>: https://learn.microsoft.com/en-us/style-guide/text-formatting/using-type/use-sentence-style-capitalization
+6. <span name=nist-guide-si>NIST guide to the SI</span>: https://www.nist.gov/pml/special-publication-811/nist-guide-si-chapter-7-rules-and-style-conventions-expressing-values
 
 ## License / Copyright
 
