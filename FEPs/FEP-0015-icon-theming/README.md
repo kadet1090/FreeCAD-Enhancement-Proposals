@@ -97,6 +97,22 @@ icons but provides a initial set of possible to apply effects that can be expand
 Altering a stroke, changing current color or swapping the palette are only examples of possible
 processing steps and more can be introduced if needed.
 
+Variants are a second axis on the same processing, beside the per-size one. A call site sometimes
+needs the same icon treated differently -- for example destructive action, or construction variant
+for sketcher element -- and neither the icon's name nor its size says so. Naming a variant on the
+request lets the manifest declare what that treatment is, in a block shaped exactly like a size
+bucket, and lets a theme with no opinion about a given variant simply not declare it. What a variant
+does is whatever processing it declares: a different stroke color, a different palette entry, or a
+class the injected stylesheet then selects on. It restyles a drawing and never selects a different
+one, the file having been settled from the name before any variant is consulted.
+
+Style parameter overrides exist for the same reason one step further down. Additionally ability to
+override specific style parameters while obtaining pixmap from code is also provided. Accepting one
+on a render lets a call site substitute the value an expression in the manifest resolves to, without
+a variant having to be declared for every such case and without the manifest being edited at all.
+These are supplied per render rather than declared per widget, which is why they travel as scoped
+values in the manner an item already supplies its own, and not as an interned override set.
+
 ### Re-rendering icons at runtime
 
 Recoloring one rendering requires recovering the source file from an already drawn pixmap. Qt's
@@ -126,6 +142,78 @@ through the manager so an icon reflects the manifest each time it is drawn rathe
 it was created. The remainder of this section describes them in the present tense, as a
 specification of what would hold were the proposal adopted.
 
+### Usage
+
+Nothing is required of code that asks for an icon today. Both entry points keep working and gain
+theme resolution and processing without being edited:
+
+```cpp
+QPixmap pixmap = Gui::BitmapFactory().pixmap("PartDesign_Body");
+```
+
+Code that wants a live icon asks the manager for one. The request is defaulted throughout, so the
+common case carries nothing:
+
+```cpp
+button->setIcon(IconManager::instance().icon("Std_Refresh"));
+button->setIcon(IconManager::instance().icon(
+    "Std_Refresh",
+    RenderRequest {}.withColor(palette.buttonText().color())
+));
+```
+
+A call site that knows something about this use of an icon names a variant. Whether the variant means
+anything is the theme's business; one nothing declares changes nothing:
+
+```cpp
+menu->addAction(
+    IconManager::instance().icon("Std_Delete", RenderRequest {}.withVariants({"danger"})),
+    tr("Delete")
+);
+```
+
+A theme answers it by declaring a block, and touches no C++ at all:
+
+```yaml
+variants:
+  danger:
+    processing:
+      svg:
+        strokeColorSwap: "@Red.500"
+```
+
+Supplying a value for a named parameter is the remaining case, for when a call site holds something
+the theme cannot know — the accent a particular tree item carries, say:
+
+```cpp
+const QPixmap pixmap = IconManager::instance().pixmap(
+    "Tree_Item",
+    RenderRequest {}
+        .withSize({16, 16})
+        .withParameters({{"CurrentColor", Base::Color::fromValue<QColor>(item->accent())}})
+);
+```
+
+`color` and `parameters` both end up deciding pixels, and the difference is worth stating plainly.
+`color` says what to paint this icon in and needs the theme's agreement about nothing. `parameters`
+supplies a value the theme reads by name, and does nothing unless the manifest references it, which
+is also why supplying one the current theme ignores costs nothing at all.
+
+From Python the same three things read as keyword arguments, with values written the way Python
+writes them:
+
+```python
+Gui.icon("Std_Delete", variants=["danger"])
+Gui.pixmap("Tree_Item", size=16, parameters={"CurrentColor": "#e01b24"})
+```
+
+A workbench describing where its own icons live adds one line beside the `addIconPath` it already
+calls:
+
+```python
+FreeCADGui.addIconRules(":/PartDesign/icons.yaml")
+```
+
 ### The icon theme file
 
 An icon theme is a YAML file at `qss:icons/{IconTheme}.yaml`, where `IconTheme` comes from the
@@ -145,6 +233,8 @@ defaults:
       strokeAdjustment:
         - stroke: 2px
           select: "path, line, circle"
+      addCss: |
+        .muted { opacity: 0.5; }
 
   sizes:
     16px:
@@ -152,6 +242,17 @@ defaults:
         svg:
           strokeAdjustment:
             - stroke: 1.5px
+
+  variants:
+    danger:
+      processing:
+        svg:
+          strokeColorSwap: "@Red.500"
+    muted:
+      processing:
+        svg:
+          addCssClasses:
+            - classes: ['muted']
 
 rules:
   - match: "PartDesign_(.+)"
@@ -181,6 +282,10 @@ are looked through in definition order. The `processing` section defines rules f
 icon. The solution allows overrides of the rules for specific `sizes` -- for example a different
 processing or even a different search paths can be applied. Each rule also defines a priority -- so
 when merging multiple files it is possible to still get proper rule order.
+
+A `variants` block is shaped like `sizes` and works the same way, except that a request states which
+variants are active rather than the renderer deducing one from a number, and more than one may be
+active at once. Because multiple variants can be active at once - a variant supplies processing only and never contributes search paths - i.e. it's not possible to override file for a specific variant due to possible conflicts.
 
 The `searchPaths` holds path templates. `{}` stands for the requested name and `$0` for the whole
 match, while `$1`…`$n` are the capture groups of the enclosing rule's `match`; inside `defaults`,
@@ -265,15 +370,22 @@ A rule that declares no `searchPaths` can never satisfy the second condition. Th
 authoring mistake rather than a way to style a family in place, and it is reported once when the
 manifest is loaded.
 
-Within the applied rule, its size bucket is consulted ahead of the rule itself, and the bucket may
-contribute search paths of its own — which is how a set that ships a separate drawing at 16px offers
-it. Size buckets are chosen by taking the nearest declared size at or above the requested one,
-floored at the smallest declared bucket, so a layer declares a bucket only where something genuinely
-differs. If the size requested is larger than largest bucket - defaults are used.
+Within the applied rule, the blocks of the request's active variants are consulted first, then its
+size bucket, then the rule itself. A variant outranks a size bucket because it is something the call
+site asked for where a size is ambient. Where several variants are active and more than one declares
+the same key, they are consulted in the order the manifest declares them, so the outcome depends on
+the manifest rather than on how a caller happened to order its list.
 
-`processing` then resolves one key at a time, in the manner the style parameter system already
-resolves a token: the applied rule's size bucket, then the applied rule, then `defaults`' size
-bucket and `defaults`, and the first of those to declare a key supplies it. In the manifest above,
+The size bucket may override search paths -- which is how a set that ships a separate drawing at
+16px offers it. Size buckets are chosen by taking the nearest declared size at or above the
+requested one, floored at the smallest declared bucket, so a layer declares a bucket only where
+something genuinely differs. If the size requested is larger than largest bucket - defaults are
+used. Reasoning is that it's always better to downscale icons rather than upscale, and small icons
+are ones which can require dedicated icons.
+
+`processing` then resolves one key at a time: the applied rule's active variants, its size bucket
+and then the rule itself, followed by `defaults`' active variants, its size bucket and `defaults`
+itself, with the first of those to declare a key supplying it. In the manifest above,
 `PartDesign_Body` rendered at 16px takes `paletteSwap` from the rule, `strokeColorSwap` from
 `defaults`, and `strokeAdjustment` from `defaults`' `16px` bucket. A rule that wants one
 substitution changed says only that, and inherits the rest.
@@ -282,7 +394,8 @@ Suppressing an inherited value is the counterpart of declaring one. For a color,
 already the expression that resolves to nothing, so `strokeColorSwap: "reset()"` leaves the icon
 uncolored. For the structural keys the empty declaration does the same: `paletteSwap: {}` swaps
 nothing and `strokeAdjustment: []` adjusts nothing, both distinct from omitting the key, which
-inherits.
+inherits. If multiple variants match with different CSS rules - the CSS (or classes) is concatenated
+so everything is applied.
 
 ### Workbench fallbacks
 
@@ -354,10 +467,9 @@ and an optional color override. It resolves in five stages.
    `missing:` that does not itself resolve yields a null icon and one warning.
 4. The format is taken from the resolved file's extension, and the processing for that format is
    resolved key by key from the applied entry down to `defaults`.
-5. Palette swap, stroke color swap and stroke adjustment run in that fixed order, and the result is
-   rasterized at `size × devicePixelRatio`. The order is fixed rather than declarable because
-   palette swap maps source colors and so must see the original document, while stroke color swap is
-   defined over whatever still paints in `currentColor` afterwards.
+5. The five processing steps run in the order given under [Processing icons](#processing-icons), and
+   the result is rasterized at `size × devicePixelRatio`. Every expression evaluated along the way
+   sees the request's parameter overrides.
 
 Stages 1 through 4 depend only on the theme file and the request. They perform no painting and,
 apart from the existence tests in stage 1, no I/O.
@@ -373,12 +485,20 @@ struct StrokeAdjustment {
     double stroke;
 };
 
+/// Classes to add, and the nodes to add them to. An empty selector means the document root.
+struct CssClassAddition {
+    std::string select;
+    std::vector<std::string> classes;
+};
+
 /// What one layer says about processing. An unset member is inherited from the next layer down;
 /// an empty one suppresses what would have been inherited.
 struct SvgProcessing {
     std::optional<std::map<std::string, std::string>> paletteSwap;  // source color -> expression
     std::optional<std::string> strokeColorSwap;                     // replaces currentColor
     std::optional<std::vector<StrokeAdjustment>> strokeAdjustment;
+    std::optional<std::vector<CssClassAddition>> addCssClasses;
+    std::optional<std::string> addCss;                              // placeholders substituted
 };
 
 /// What a rule, an override or `defaults` says, before any size refinement.
@@ -387,11 +507,12 @@ struct IconLayer {
     std::optional<SvgProcessing> processing;
 };
 
-/// A layer together with the buckets that refine it per rendered size. `defaults`, every rule and
-/// every override has this shape, and buckets do not nest.
+/// A layer together with the blocks that refine it. `defaults`, every rule and every override has
+/// this shape, and neither kind of block nests further.
 struct IconEntry {
     IconLayer base;
-    std::map<int, IconLayer> sizes;
+    std::map<int, IconLayer> sizes;             // keyed by pixel size; one applies
+    std::map<std::string, IconLayer> variants;  // keyed by name; any number apply
 };
 
 struct IconRule {
@@ -453,15 +574,25 @@ struct IconMeta
 };
 
 struct RenderRequest {
-    std::optional<QSize> size;     // unset: the file's natural size
+    std::optional<QSize> size;                    // unset: the file's natural size
     qreal dpr = 1.0;
-    std::optional<QColor> color;   // unset: the theme's own color expressions
+    std::optional<QColor> color;                  // unset: the theme's own color expressions
+    std::vector<std::string> variants;            // which `variants` blocks of the manifest apply
+    StyleParameters::ParameterValues parameters;  // scoped values for this render's expressions
     QIcon::Mode mode = QIcon::Normal;
     QIcon::State state = QIcon::Off;
+
+    RenderRequest& withSize(QSize value);
+    RenderRequest& withDpr(qreal value);
+    RenderRequest& withColor(QColor value);
+    RenderRequest& withVariants(std::vector<std::string> value);
+    RenderRequest& withParameters(StyleParameters::ParameterValues value);
+    RenderRequest& withMode(QIcon::Mode value);
+    RenderRequest& withState(QIcon::State value);
 };
 
-QIcon   icon(std::string_view name);
-QIcon   iconFromFile(std::string_view path);
+QIcon   icon(std::string_view name, const RenderRequest& request = {});
+QIcon   iconFromFile(std::string_view path, const RenderRequest& request = {});
 QPixmap pixmap(std::string_view name, const RenderRequest& request);
 QPixmap pixmapFromFile(std::string_view path, const RenderRequest& request);
 
@@ -479,16 +610,18 @@ request, every one of which is handed straight to Qt to rasterize with. Nothing 
 layer needs Qt to express it, so nothing there uses it.
 
 A name and a path are distinct arguments to distinct methods rather than one argument whose shape
-decides its meaning. An unset `size` means the natural size, which is 64×64 for an SVG and the
-file's own dimensions for a raster image; this reproduces what `BitmapFactoryInst::pixmap()` returns
-today.
+decides its meaning. `icon()` takes a request as well, of which it uses only the members that
+outlive a single rendering -- the color, the variants and the parameter overrides -- because size,
+mode and state are settled by Qt when the engine is asked to paint. An unset `size` means the
+natural size, which is 64×64 for an SVG and the file's own dimensions for a raster image; this
+reproduces what `BitmapFactoryInst::pixmap()` returns today.
 
 `Gui::ParametrizedIconEngine` is the `QIconEngine` the manager hands out. It holds an icon name or a
 verbatim path and nothing resolved, asking the manager on every call, so a theme change alters what
 an already-issued `QIcon` paints without anyone re-issuing it. Each pixmap it produces is registered
 with the manager against the metadata it came from, which is what makes the recovery described under
-[Recoloring](#recoloring) possible. It overrides `pixmap()`, `scaledPixmap()`, `actualSize()`,
-`iconName()`, `key()`, `clone()` and `isNull()`.
+[Processing icons](#processing-icons) possible. It overrides `pixmap()`, `scaledPixmap()`,
+`actualSize()`, `iconName()`, `key()`, `clone()` and `isNull()`.
 
 `Gui::BitmapFactoryInst` gains the processing primitives as stateless members beside its existing
 `pixmapFromSvg()`: apply a color map to SVG bytes, swap `currentColor` strokes and fills, scale
@@ -511,22 +644,93 @@ any selector language here is code FreeCAD writes and maintains. This subset cov
 adjustment needs. Child, sibling and pseudo-class selectors are not supported, and adding one is a
 change to this grammar rather than an escape hatch.
 
-### Recoloring
+### Processing icons
 
-`paletteSwap` maps colors appearing literally in the source document to expressions, while
-`strokeColorSwap` names the color that replaces `currentColor`. Both are resolved for a given icon
-by the walk described under [How a rule is chosen](#how-a-rule-is-chosen), so which rule supplies
-them depends on which rule found the file.
+Processing turns the resolved file into the document that is rasterized. Five steps are defined for
+`svg`, and they run in a fixed order:
 
-A render request may carry a color. It takes the place of `strokeColorSwap` for that render only and
-leaves `paletteSwap` untouched, so an icon with baked-in colors keeps them while a monochrome glyph
-follows the caller.
+1. `paletteSwap` maps colors appearing literally in the source document to expressions.
+2. `strokeColorSwap` names the color that replaces `currentColor`.
+3. `strokeAdjustment` sets stroke widths on the nodes a selector picks out.
+4. `addCssClasses` adds class names to the document root, or to the nodes a selector picks out.
+5. `addCss` injects a stylesheet into a `<style>` element.
 
-A caller holding the `QIcon` can request a color directly. A caller holding only a `QPixmap`, which
-is what Qt's styling entry points such as `QStyle::generatedPixmap()` are given, recovers the icon's
-metadata from the pixmap's cache key through `metaForPixmap()` and re-renders from the source file
-rather than filtering the bitmap it was handed. A pixmap the manager did not produce is not found,
-and the caller proceeds as it otherwise would.
+The order is fixed rather than declarable. Palette swap maps source colors and so has to see the
+original document; stroke color swap is defined over whatever still paints in `currentColor`
+afterwards; and the stylesheet is injected last so that every class the earlier steps and the
+request itself have added is already present for it to select on.
+
+#### Variants
+
+A request states which variants are active, and each names a `variants` block in the manifest whose
+processing is layered over the rest, in the order given under
+[How a rule is chosen](#how-a-rule-is-chosen). A variant is a named set of processing overrides that
+a call site opts into.
+
+```cpp
+IconManager::instance().pixmap(
+    "Part_Cut",
+    RenderRequest {}.withSize({16, 16}).withVariants({"danger"})
+);
+```
+
+With the manifest shown earlier, that icon takes `strokeColorSwap: "@Red.500"` from the `danger`
+block instead of the `@BaseTextColor` it would otherwise inherit. A variant the manifest does not
+declare is not an error and costs nothing: a theme answers the variants it knows about, which is
+what lets a call site ask for one before any theme has an opinion about it.
+
+Nothing obliges a variant to change color. The `muted` block in the same manifest adds a class and
+leaves the stylesheet to say what that means; another could adjust stroke weights or swap a palette
+entry. Adding a class is one of the things a variant's processing may do, not what a variant is.
+
+#### Adding classes
+
+`addCssClasses` takes a list of entries, each naming the classes to add and, optionally, a `select`
+in the language given under [Node selection](#node-selection). An entry without `select` applies to
+the document root, which is the common case and the default:
+
+```yaml
+addCssClasses:
+  - classes: [fc-icon]            # the root
+  - select: "path, line"
+    classes: [fc-stroked]
+```
+
+#### Injecting CSS
+
+`addCss` holds a stylesheet, injected into a `<style>` element in the rendered document. Two
+substitutions are performed on it first. Style parameter expressions are replaced by the values they
+resolve to, under the same rules as every other value position in the manifest, so `stroke:
+@Red.500` reaches the renderer as a literal color. And `currentColor` is replaced by the color the
+icon is being rendered in, because Qt resolves `currentColor` from a `color` presentation attribute
+but not from a CSS `color` declaration; substituting it in the text sidesteps that entirely.
+
+Qt's SVG renderer applies a `<style>` element with class, element and descendant selectors, and a
+declaration there beats the corresponding presentation attribute — which is what makes a stylesheet
+able to override what the document already carries.
+
+#### Style parameter overrides
+
+A request may carry `StyleParameters::ParameterValues`, a map from parameter name to an
+already-resolved value, which is in force for every expression the manifest resolves for that
+render: in `paletteSwap`, in `strokeColorSwap`, and in the injected stylesheet.
+
+Values are supplied per render rather than declared per widget, so they travel as scoped values, in
+the manner an item already supplies its own to the style, rather than as a declared override set.
+Supplying a value the loaded theme references nowhere costs nothing, and a value two call sites
+supply alike is resolved once for both.
+
+#### Colors supplied by the caller
+
+A render request may also carry a color outright. It takes the place of `strokeColorSwap` for that
+render only and leaves `paletteSwap` untouched, so an icon with baked-in colors keeps them while a
+monochrome glyph follows the caller.
+
+A caller holding the `QIcon` can request a color, variants and overrides directly. A caller holding
+only a `QPixmap`, which is what Qt's styling entry points such as `QStyle::generatedPixmap()` are
+given, recovers the icon's metadata from the pixmap's cache key through `metaForPixmap()` and
+re-renders from the source file rather than filtering the bitmap it was handed. A pixmap the manager
+did not produce is not found, and the caller proceeds as it otherwise would.
 
 ### Python API
 
@@ -534,11 +738,15 @@ and the caller proceeds as it otherwise would.
 
 ```python
 FreeCADGui.icon(name: str,
-                color: str | QColor | None = None) -> QIcon
+                color: str | QColor | None = None,
+                variants: Sequence[str] | None = None,
+                parameters: Mapping[str, object] | None = None) -> QIcon
 
 FreeCADGui.pixmap(name: str,
                   size: int | tuple[int, int] | None = None,
                   color: str | QColor | None = None,
+                  variants: Sequence[str] | None = None,
+                  parameters: Mapping[str, object] | None = None,
                   mode: QIcon.Mode = QIcon.Normal,
                   state: QIcon.State = QIcon.Off) -> QPixmap
 ```
@@ -555,6 +763,19 @@ omitted `size` means the natural size, as it does in C++.
 `color` accepts a `QColor` or the string spelling of one, and overrides `currentColor` for that icon
 exactly as the C++ request does. It does not accept a style parameter expression; deciding a color
 from the theme is the subject of the separate FEP named under [Further Work](#further-work).
+
+`variants` names the manifest's `variants` blocks that should apply, and `parameters` supplies
+values for named style parameters, in force for every expression the manifest resolves for this
+icon. Values are given as values rather than as expressions -- a color, a length, a number — because
+they are supplied rather than declared. Both are described under
+[Processing icons](#processing-icons), and both apply to `icon()` as well as `pixmap()` because
+neither is a property of one rendering:
+
+```python
+button.setIcon(FreeCADGui.icon("Part_Cut", variants=["danger"]))
+label.setPixmap(FreeCADGui.pixmap("Std_Refresh", size=16,
+                                  parameters={"CurrentColor": "#418fde"}))
+```
 
 A third function registers a workbench's own rules, as described under [Workbench
 fallbacks](#workbench-fallbacks):
@@ -576,7 +797,7 @@ beside it, not a replacement for it.
 | ----------------- | ------------------------------------------------------------- | --------------------- |
 | Resolution        | icon name + pixel size                                        | `reload()`            |
 | Source bytes      | file path                                                     | `reload()`            |
-| Rendered pixmaps  | name or path, size, dpr, mode, state, color override          | `reload()`, `clear()` |
+| Rendered pixmaps  | name or path, size, dpr, mode, state, color, variants, scope bin | `reload()`, `clear()` |
 
 The resolution cache stores misses as well as hits. Once `BitmapFactory` delegates, every icon
 request in the application walks the rule list, and an unresolvable name would otherwise re-run
@@ -694,8 +915,14 @@ in the manifest able to be an expression rather than a literal; `PythonWrapper::
 exists and is what `getIcon` uses today; and `QFile::exists` already resolves both `:/` resources
 and the `icons:` search path that `BitmapFactoryInst::addPath()` populates, so the templates reach
 addon-registered directories without the resolver enumerating anything. A prototype of the rendering
-half — an SVG recoloring icon engine driven by a manager — has been running in the author's branch,
-which is where the sizing and device pixel ratio details below were found.
+half, an SVG recoloring icon engine driven by a manager, has been running in the author's branch.
+
+`addCss` and `addCssClasses` rest on what Qt's SVG renderer supports. It applies a `<style>` element
+with class, element and descendant selectors, a declaration there beats the corresponding
+presentation attribute, and `stroke-width` set in CSS takes effect. It resolves `currentColor` from a
+`color` presentation attribute on the root or an ancestor, but not from a CSS `color` declaration,
+which is why the injected stylesheet has `currentColor` substituted textually along with the
+placeholders.
 
 The manifest layer holds no Qt type and includes no Qt header, so rule ordering, alias resolution,
 per-key processing and bucket selection can all be exercised without Qt at all, not merely without a
@@ -708,7 +935,7 @@ chain that returns to a name it has seen is abandoned with one warning and the o
 on through its remaining candidates, so a mistake in a manifest costs one wrong icon rather than a
 hang. A depth limit would additionally turn a legitimate long chain into a mystery.
 
-Reloading has a sharp edge worth stating. Workbenches register their manifests once, as they load,
+Reloading has a sharp edge. Workbenches register their manifests once, as they load,
 and are never asked again, so re-reading the icon theme must keep every contributed source. A reload
 that rebuilt the rule list from the theme file alone would drop every workbench fallback the moment
 a user changed icon theme, and the icons would disappear with no error anywhere.
@@ -741,6 +968,10 @@ for choosing among installed icon themes. The last is the natural follow-up, sin
 adds the preference but no interface for it.
 
 ## Changelog
+
+### 0.2 - 2026-09-11
+
+- Extended scope with variants of icons.
 
 ### 0.1 - 2026-09-09
 
